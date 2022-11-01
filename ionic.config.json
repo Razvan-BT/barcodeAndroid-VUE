@@ -1,7 +1,0 @@
-{
-  "name": "androidApp-Vue",
-  "integrations": {
-    "capacitor": {}
-  },
-  "type": "vue"
-}
