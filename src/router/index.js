@@ -1,5 +1,9 @@
 import { createRouter, createWebHistory } from '@ionic/vue-router';
 import HomePage from '../views/home-page.vue'
+import SettingPage from '../views/settings-page.vue';
+import CompletePage from '../views/complete-page.vue';
+import CheckPage from '../views/check-page.vue';
+import InventarPage from '../views/inventar-page.vue';
 
 const routes = [
   {
@@ -11,9 +15,26 @@ const routes = [
     component: HomePage,
   },
   {
-    path:'/tools/scanning',
-    component: () => import('@/views/qr-scanner.vue'),
+    path:'/tools/check/scanning',
+    component: () => import('@/views/qr-scanner-check.vue'),
+  },
+  {
+    path:'/settings',
+    component: SettingPage,
+  },
+  {
+    path:'/complet',
+    component: CompletePage,
+  },
+  {
+    path:'/check',
+    component: CheckPage,
+  },
+  {
+    path:'/inventar',
+    component: InventarPage,
   }
+
     // children: [
     //   {
     //     path: '',
