@@ -16,6 +16,8 @@
 </template>
     
 <script>
+// SQLiteDBConnection
+import { CapacitorSQLite, SQLiteConnection } from '@capacitor-community/sqlite'
 import { IonCard, IonCardHeader, IonCardContent, IonItem, IonLabel, IonInput, IonButton, toastController } from '@ionic/vue';
 import { Preferences  } from '@capacitor/preferences';
 import axios from 'axios';
@@ -54,6 +56,49 @@ export default {
                     });
             }
             else { this.showWarninigError(3000, 'There are problem with location! Please set location first!'); }
+            
+
+            console.log("Try to connect...");
+            const capLite = new SQLiteConnection(CapacitorSQLite);
+            const db = await capLite.createConnection('TEST', 1, false, 'no-encryption', false);
+            await db.open();
+
+            // alert("Table created ");
+            await db.execute(`CREATE TABLE Persons (
+                PersonID int,
+                LastName varchar(255),
+                FirstName varchar(255),
+                Address varchar(255),
+                City varchar(255)
+            );`)
+            .then(() => {
+                alert('Table created Persons!');
+            })
+            .catch(error=>{
+                alert('error' + error)
+            });
+
+            alert("BAZA DE DATE: " + db.getDatabaseList());
+
+            await db.query(`INSERT INTO Persons (PersonID, LastName, FirstName, Address, City) VALUES (1, 'Mihai', 'Andrei', 'Botosani', 'Jud. Botosani') `)
+            .then(() => {
+                alert('Table Persons executeed! ');
+            })
+            .catch(error=>{
+                alert('error insert ' + error)
+            });
+
+
+            const test = await (await db.query(`SELECT * FROM Persons`)).values
+            .then(() => {
+                alert('Table Persons SELECTED! ' + test);
+            })
+            .catch(error=>{
+                alert('error' + error)
+            });
+
+
+            await db.close();
         }
     },
     components: { IonCard, IonCardHeader, IonCardContent, IonItem, IonLabel, IonInput, IonButton }
