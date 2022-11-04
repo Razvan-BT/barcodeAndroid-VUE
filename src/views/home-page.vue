@@ -17,14 +17,10 @@
                 <ion-button :href="`/inventar`">
                     Inventar
                 </ion-button>
-
-                <ion-card-title>Scaneaza dosarul...</ion-card-title>
-                <ion-card-subtitle>Dosar scanat: VTE-572901</ion-card-subtitle>
             </ion-card-header>
-
-            <ion-card-content>
-
-            </ion-card-content>
+                <ion-card-content>
+                    <ion-card-subtitle v-if="lastVte_scanned != '' && lastVte_scanned != 'null'">Ultimul dosar scanat: {{ this.lastVte_scanned.toUpperCase() }}</ion-card-subtitle>
+                </ion-card-content>
         </ion-card>
 
 
@@ -33,10 +29,26 @@
 </template>
 
 <script>
-import { IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonButton } from '@ionic/vue';
+import { IonCard, IonCardHeader, IonCardContent, IonCardSubtitle, IonButton } from '@ionic/vue';
 import { defineComponent } from 'vue';
+import { Preferences } from '@capacitor/preferences';
 
 export default defineComponent({
-    components: { IonCard, IonCardContent, IonCardHeader, IonCardSubtitle, IonCardTitle, IonButton },
+    data() {
+        return {
+            lastVte_scanned: '' 
+        }
+    },
+    components: { IonCard, IonCardHeader, IonCardSubtitle, IonButton, IonCardContent },
+    methods: {
+        async getLastVteScanned() {
+            const { value } = await Preferences.get({ key: 'lastVte_scanned' });
+            this.lastVte_scanned = `${value}`;
+        }
+    },
+    beforeMount() {
+        // Cand intri prima data pe pagina 'isi da refresh'
+        this.getLastVteScanned();
+    }
 });
 </script>

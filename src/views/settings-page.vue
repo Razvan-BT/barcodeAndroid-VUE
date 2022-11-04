@@ -33,7 +33,7 @@ export default defineComponent({
                 { id: 0, type: 'alimentat', name: 'Alimentat' },
                 { id: 1, type: 'ch', name: 'Ch' },
                 { id: 2, type: 'm', name: 'M' },
-                { id: 3, type: 'none', name: 'Nothing' }
+                { id: 3, type: 'null', name: 'Nothing' }
             ]
         }
     },

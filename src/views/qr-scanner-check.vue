@@ -17,6 +17,7 @@
 <script>
 import { QrcodeStream } from "vue3-qrcode-reader";
 import { toastController } from '@ionic/vue';
+import { Preferences } from '@capacitor/preferences';
 import axios from 'axios'
 // import { ElementTypes } from "@vue/compiler-core";
 
@@ -42,6 +43,12 @@ export default {
 
     removeScanner() {
       document.querySelector("#qr-scann").remove();
+    },
+    async setLastVTE(lastVte) {
+      await Preferences.set({
+        key: 'lastVte_scanned',
+        value: lastVte
+      })
     },
     async presentToast(sendMessage) {
       const toast = await toastController.create({
@@ -70,7 +77,7 @@ export default {
       if (code.includes("VTE-")) {
         this.removeScanner();
         this.presentToast(`${code} scanned!`);
-
+        this.setLastVTE(code);
 
 
         let url = `https://node.formens.ro/barcode_loc3?order=${decodedString}&mp=alimentat`
