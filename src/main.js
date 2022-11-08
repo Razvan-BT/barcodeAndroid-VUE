@@ -32,7 +32,7 @@ const app = createApp(App)
   .use(router);
 
   app.component('content-layout', HeaderComponent);
-  
+
 router.isReady().then(() => {
   app.mount('#app');
 });
