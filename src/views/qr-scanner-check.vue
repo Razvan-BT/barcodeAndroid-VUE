@@ -9,13 +9,36 @@
         </div>
       </div>
     </div>
-    <div id="send-table-result"></div>
+    <div id="send-table-result">
+    
+    <ion-content id="ion-padding">
+      <table style="font-family:Arial;width:100%;border:1px solid #ccc;border-collapse: collapse;color:#667677;">
+        <thead style="border:1px solid #ccc;background:#6a9ef2;color:white !important; height:50px;padding:2px;">
+          <tr style="border:1px solid #ccc;">
+            <th class="string">DateTime</th>
+            <th class="string">Order</th>
+            <th class="string">Locatie</th>
+            <th class="string">Element</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr style="border:1px solid #ccc;" v-for="barcode in barcodeValues" :key="barcode">
+            <td style="border:1px solid #ccc;text-align:center;padding:3px;" class="string">{{ barcode.TimeStamp }}</td>
+            <td style="border:1px solid #ccc;text-align:center;padding:3px;" class="string">{{ barcode.Order }}</td>
+            <td style="border:1px solid #ccc;text-align:center;padding:3px;" class="string">{{ barcode.Locatie }}</td>
+            <td style="border:1px solid #ccc;text-align:center;padding:3px;" class="string">{{ barcode.Element }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </ion-content>
+    </div>
     <!-- <h5 @click="someDebug">Result</h5> -->
   </content-layout>
 </template>
   
 <script>
 // import { onBeforeMount } from 'vue'
+import { IonContent } from "@ionic/vue";
 import { QrcodeStream } from "vue3-qrcode-reader";
 import { toastController } from '@ionic/vue';
 import { Preferences } from '@capacitor/preferences';
@@ -52,6 +75,8 @@ export default {
       logs_created: false,
       sendRequest: false,
       currentLocation: '',
+      barcodeValues: [],
+      canShowTable: false,
       checkIfAreValided: true,
       qrvalue: "",
     };
@@ -97,22 +122,26 @@ export default {
 
         await db.open(); //TimeStamp TIMESTAMP NOT NULL DEFAULT current_timestamp,
 
-        let sql_query, numarElemente = 2;
-        if(this.currentLocation == 'm') {
+        let sql_query;
+        if (this.currentLocation == 'm') {
           this.p1 = 'P';
           this.d1 = 'PIEPT';
 
           this.p2 = 'M';
           this.d2 = 'MANENCI';
+          sql_query = "SELECT * FROM ( SELECT TOP (1), [Order], REPLACE([Locatie], 'LOC ', '') as [Locatie], " + this.code + " as Element FROM `barcode_match` WHERE `Order` = '" + this.code + "' AND `Locatie` = '" + this.d1 + "' AND `Element` = '" + this.p1 + "' ) as tableX ";
+          sql_query += "UNION ALL SELECT * FROM ( SELECT TOP (1), [Order], REPLACE([Locatie], 'LOC ', '') as [Locatie], " + this.code + " as Element FROM `barcode_match` WHERE `Order` = '" + this.code + "' AND `Locatie` = '" + this.d2 + "' AND `Element` = '" + this.p2 + "' ) as tableZ";
 
-        } else if(this.currentLocation == 'ch') {
+        } else if (this.currentLocation == 'ch') {
           this.p1 = 'S';
           this.d1 = '';
 
           this.p2 = '0';
           this.d2 = '';
 
-        } else if(this.currentLocation == 'alimentat') {
+          sql_query = "SELECT * FROM ( SELECT TOP (1), [Order], REPLACE([Locatie], 'LOC ', '') as [Locatie], " + this.code + " as Element FROM `barcode_match` WHERE `Order` = '" + this.code + "' AND `Locatie` = '" + this.d1 + "' AND `Element` = '" + this.p1 + "' ) as tableX UNION ALL SELECT * FROM ( SELECT * FROM `barcode_match` WHERE `Order` = '" + this.code + "' AND `Locatie` = '" + this.d2 + "' AND `Element` = '" + this.p2 + "' ) as tableZ";
+
+        } else if (this.currentLocation == 'alimentat') {
           this.p1 = 'F';
           this.d1 = 'stofa';
 
@@ -122,25 +151,35 @@ export default {
           this.p3 = 'A';
           this.d3 = 'accesorii';
 
-          numarElemente = 3;
+          sql_query = "SELECT * FROM ( SELECT TOP (1), [Order], REPLACE([Locatie], 'LOC ', '') as [Locatie], " + this.code + " as Element FROM `barcode_match` WHERE `Order` = '" + this.code + "' AND `Locatie` = '" + this.d1 + "' AND `Element` = '" + this.p1 + "' ) as tableX ";
+          sql_query += "UNION ALL SELECT * FROM ( SELECT TOP (1), [Order], REPLACE([Locatie], 'LOC ', '') as [Locatie], " + this.code + " as Element FROM `barcode_match` WHERE `Order` = '" + this.code + "' AND `Locatie` = '" + this.d2 + "' AND `Element` = '" + this.p2 + "' ) as tableY ";
+          sql_query += "UNION ALL SELECT * FROM ( SELECT TOP (1), [Order], REPLACE([Locatie], 'LOC ', '') as [Locatie], " + this.code + " as Element FROM `barcode_match` WHERE `Order` = '" + this.code + "' AND `Locatie` = '" + this.d3 + "' AND `Element` = '" + this.p3 + "' ) as tableZ;";
         }
-        sql_query = "SELECT * FROM `barcode_match` WHERE `Order` = '" + this.code + "' AND `Element` = '" + this.p1 + "'";
-        if(numarElemente == 3) sql_query = sql_query + "UNION ALL SELECT * FROM `barcode_match` WHERE `Order` = '" + this.code + "' AND `Element` = '" + this.p3 + "'";
         await db.query(sql_query)
           .then((res) => {
             Object.entries(res).forEach(([key, value]) => {
               if (key.length > 0) console.log('[debug] key works at qr-scanner');
               if (value.length > 0) {
-                // alert('test : ' + value[0]);
+                /* 
+                  Daca totul sa executat corect atunci se va crea un tabel cu Locatia, VTE-ul, Timestampul si Elementul; pentru VTE-ul Y;
+                  SELECT * FROM ( SELECT * FROM `barcode_match` WHERE `Order` = 'vte-11' AND `Locatie` = 'd3' AND `Element` = 'stofa' LIMIT 1) as tableXUNION ALL SELECT * FROM ( SELECT * FROM `barcode_match` WHERE `Order` = 'vte-11' AND `Locatie` = 'd3' AND `Element` = 'stofa' LIMIT 1) as tableY --- corect
+                  INSERT INTO `barcode_match` (`Order`, `Locatie`, `Element`) VALUES ('vte-11', 'd3', 'stofa'); -- corect
+                  CREATE TABLE IF NOT EXISTS `barcode_match` (`TimeStamp` TIMESTAMP NOT NULL DEFAULT current_timestamp, `Order` VARCHAR(100), `Locatie` TEXT(100), `Element` TEXT(100), `Matchpoint` TEXT(100));
+                  */
+                document.querySelector('#show-data').style.display = 'none';
+                this.barcodeValues = value;
+                this.createLogs("['" + this.code + "' checked SQL: '" + sql_query + "']");
+                sql_query = '';
               } else {
                 this.presentToast('Alerta! Nu se poate imperechea pune-l pe raft!');
               }
             })
           })
           .catch((e) => {
-            alert(e);
+            this.createLogs(" [ERROR: ] '" + e + "'");
+            alert("qr-scannerd" + e)
           })
-        
+
         await capLite.closeConnection('barcode_match_db');
         this.checkIfAreValided = false;
       }
@@ -149,7 +188,28 @@ export default {
         this.presentToast("This don't start with VTE, so are invalid!");
       }
     },
+    async createLogs(logs) {
 
+      const capLite = new SQLiteConnection(CapacitorSQLite);
+      const db = await capLite.createConnection("barcode_match_db", 1, false, 'no-encryption', false);
+
+      await db.open(); //TimeStamp TIMESTAMP NOT NULL DEFAULT current_timestamp,
+
+      let db_statement2;
+      db_statement2 = "INSERT INTO `barcode_match_logs` (`Logs`) VALUES ('"+logs+"');";
+      await db.query(db_statement2)
+        .then(() => {
+          console.log("LOG inserted!");
+          // alert("NR4: inserted!");
+        })
+        .catch((e) => {
+          this.createLogs(" [ERROR: ] '" + e + "'");
+          alert("qr-scanner" + e)
+        })
+
+
+      await capLite.closeConnection("barcode_match_db");
+    }
   },
   async beforeMount() {
     try { // create connection to App with DB
@@ -168,7 +228,7 @@ export default {
           this.sendRequest = true;
         })
         .catch((e) => {
-          alert(e);
+          alert("qr-scanner" + e)
         })
 
       if (this.sendRequest) {
@@ -179,20 +239,10 @@ export default {
             // alert("NR2: " + JSON.stringify(res));
           })
           .catch((e) => {
-            alert(e);
+            alert("qr-scanner" + e)
           })
         this.logs_created = true;
       }
-
-      let db_statement2;
-      db_statement2 = "INSERT INTO `barcode_match_logs` (Logs) VALUES ('Acesta este un test.');";
-      await db.query(db_statement2)
-        .then(() => {
-          // alert("NR4: inserted!");
-        })
-        .catch((e) => {
-          alert(e);
-        })
 
       if (this.logs_created) {
         let db_statement;
@@ -202,7 +252,7 @@ export default {
             // alert("NR3: " + JSON.stringify(res));
           })
           .catch((e) => {
-            alert(e);
+            alert("qr-scanner" + e)
           })
       }
 
@@ -215,7 +265,7 @@ export default {
 
   components: {
     QrcodeStream,
-
+    IonContent,
   },
 };
 
