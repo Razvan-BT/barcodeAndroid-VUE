@@ -29,10 +29,6 @@ const routes = [
   {
     path:'/check',
     component: CheckPage,
-  },
-  {
-    path:'/inventar',
-    component: InventarPage,
   }
 
     // children: [

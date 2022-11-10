@@ -3,26 +3,24 @@
         <ion-content class="ion-padding">
             <ion-list>
                 <h3>Location
-                    <ion-label v-if="inform != '' || inform == 'none'">- {{ inform }}</ion-label>
+                    <ion-label v-if="this.inform != '' || this.inform == 'none'">- {{ this.inform }}</ion-label>
                     <ion-label v-else>- no set</ion-label>
                 </h3>
                 <ion-item>
-                    <ion-select interface="popover" :value="inform" @ionChange="openLocations = $event.target.value"
+                    <ion-select interface="popover" :value="this.inform" @ionChange="openLocations = $event.target.value"
                         placeholder="Choose">
                         <ion-select-option v-for="loc in locations" :key="loc" :value="loc.type">{{ loc.name }}
                         </ion-select-option>
                     </ion-select>
                 </ion-item>
                 <ion-button @click="setLocation">Set location</ion-button>
-                <ion-button @click="debugSystem">Debug</ion-button>
-                <ion-button @click="debugSystemTwo">Debug 2</ion-button>
             </ion-list>
             <h3>
                 Logs
             </h3>
             <ion-list>
                 <ion-item v-for="log in showUserLogs" :key="log">
-                    {{ log.Order }} l: {{ log.Locatie }} M: {{ log.Element }}
+                    [{{ log.TimeStamp }}] {{ log.Logs }}
                 </ion-item>
             </ion-list>
         </ion-content>
@@ -54,101 +52,27 @@ export default defineComponent({
     components: { IonItem, IonList, IonLabel, IonSelect, IonSelectOption },
 
     methods: {
-        async debugSystem() {
-            const capLite = new SQLiteConnection(CapacitorSQLite);
-            const db = await capLite.createConnection("barcode_match_db", 1, false, 'no-encryption', false);
+        async showLabel(message) {
+            const toast = await toastController.create({
+                message: message,
+                duration: 5000,
+                position: 'bottom'
+            });
 
-            await db.open();
-
-            await db.query("INSERT INTO `barcode_match` (`Order`, `Locatie`, `Element`, 'Matchpoint') VALUES ('vte-4324', 'LOC C-2', 'C', '"+this.inform+"');")
-                .then((valoare) => {
-                    Object.entries(valoare).forEach(([key, value]) => {
-                        if (key.length > 0) console.log('[debug] key works at qr-scanner');
-                        if (value.length > 0) {
-                            // 
-                        }
-                    })
-                })
-                .catch(error => {
-                    alert(error);
-                });
-
-
-                await db.query("INSERT INTO `barcode_match` (`Order`, `Locatie`, `Element`, 'Matchpoint') VALUES ('vte-4324', 'LOC D-1', 'D', '"+this.inform+"');")
-                .then((valoare) => {
-                    Object.entries(valoare).forEach(([key, value]) => {
-                        if (key.length > 0) console.log('[debug] key works at qr-scanner');
-                        if (value.length > 0) {
-                            // this.showUserLogs = value;
-                        }
-                    })
-                })
-                .catch(error => {
-                    alert(error);
-                });
-
-
-                await db.query("INSERT INTO `barcode_match` (`Order`, `Locatie`, `Element`, 'Matchpoint') VALUES ('vte-4324', 'LOC P-1', 'P', '"+this.inform+"');")
-                .then((valoare) => {
-                    Object.entries(valoare).forEach(([key, value]) => {
-                        if (key.length > 0) console.log('[debug] key works at qr-scanner');
-                        if (value.length > 0) {
-                            // this.showUserLogs = value;
-                        }
-                    })
-                })
-                .catch(error => {
-                    alert(error);
-                });
-
-
-                await db.query("INSERT INTO `barcode_match` (`Order`, `Locatie`, `Element`, 'Matchpoint') VALUES ('vte-4324', 'LOC M-4', 'M', '"+this.inform+"');")
-                .then((valoare) => {
-                    Object.entries(valoare).forEach(([key, value]) => {
-                        if (key.length > 0) console.log('[debug] key works at qr-scanner');
-                        if (value.length > 0) {
-                            // this.showUserLogs = value;
-                        }
-                    })
-                })
-                .catch(error => {
-                    alert(error);
-                });
-
-                await db.query("INSERT INTO `barcode_match` (`Order`, `Locatie`, `Element`, 'Matchpoint') VALUES ('vte-4324', 'LOC F-4', 'F', '"+this.inform+"');")
-                .then((valoare) => {
-                    Object.entries(valoare).forEach(([key, value]) => {
-                        if (key.length > 0) console.log('[debug] key works at qr-scanner');
-                        if (value.length > 0) {
-                            // this.showUserLogs = value;
-                        }
-                    })
-                })
-                .catch(error => {
-                    alert(error);
-                });
-
-                await db.query("INSERT INTO `barcode_match` (`Order`, `Locatie`, `Element`, 'Matchpoint') VALUES ('vte-4324', 'LOC A-4', 'A', '"+this.inform+"');")
-                .then((valoare) => {
-                    Object.entries(valoare).forEach(([key, value]) => {
-                        if (key.length > 0) console.log('[debug] key works at qr-scanner');
-                        if (value.length > 0) {
-                            // this.showUserLogs = value;
-                        }
-                    })
-                })
-                .catch(error => {
-                    alert(error);
-                });
-                await capLite.closeConnection('barcode_match_db');
+            await toast.present();
         },
-        async debugSystemTwo() {
+        async getLoc() {
+            const { value } = await Preferences.get({ key: 'location' });
+            this.inform = `${value}`;
+            console.log(this.inform);
+        },
+        async setLocation() {
             const capLite = new SQLiteConnection(CapacitorSQLite);
             const db = await capLite.createConnection("barcode_match_db", 1, false, 'no-encryption', false);
 
             await db.open();
 
-            await db.query("SELECT * FROM `barcode_match` ORDER BY TimeStamp DESC")
+            await db.query("INSERT INTO `barcode_match_logs` (`Logs`) VALUES ('- [WARN]: Location set from "+this.inform+" to "+this.openLocations+"');")
                 .then((valoare) => {
                     Object.entries(valoare).forEach(([key, value]) => {
                         if (key.length > 0) console.log('[debug] key works at qr-scanner');
@@ -160,32 +84,8 @@ export default defineComponent({
                 .catch(error => {
                     alert(error);
                 });
+                await capLite.closeConnection('barcode_match_db');
 
-                await capLite.closeConnection("barcode_match_db");
-        },
-        async showLabel(message) {
-            const toast = await toastController.create({
-                message: message,
-                duration: 5000,
-                position: 'bottom'
-            });
-
-            await toast.present();
-        },
-        async setTigger() {
-            await Preferences.set({
-                key: 'location',
-                value: 'Alimentat'
-            })
-            console.log("Alimentat");
-
-        },
-        async getLoc() {
-            const { value } = await Preferences.get({ key: 'location' });
-            this.inform = `${value}`;
-            console.log(this.inform);
-        },
-        setLocation() {
             Preferences.set({
                 key: 'location',
                 value: this.openLocations
@@ -206,7 +106,7 @@ export default defineComponent({
                     Object.entries(valoare).forEach(([key, value]) => {
                         if (key.length > 0) console.log('[debug] key works at qr-scanner');
                         if (value.length > 0) {
-                            // this.showUserLogs = value;
+                            this.showUserLogs = value;
                         }
                     })
                 })

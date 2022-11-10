@@ -2,20 +2,21 @@
     <content-layout title="Check if are all complete">
         <ion-content class="ion-padding">
             <table style="font-family:Arial;width:100%;border:1px solid #ccc;border-collapse: collapse;color:#667677;">
-                <thead style="border:1px solid #ccc;background:#6a9ef2;color:white !important; height:50px;padding:2px;">
+                <thead
+                    style="border:1px solid #ccc;background:#6a9ef2;color:white !important; height:50px;padding:2px;">
                     <tr style="border:1px solid #ccc;">
-                        <th class="string"> Order</th>
-                        <th class="string"> {{ this.d1 }}</th>
-                        <th v-if="this.arrayCuKey.length > 2 && this.arrayCuKey.length <= 3" class="string"> {{ this.d2 }}</th>
-                        <th v-if="this.arrayCuKey.length > 3" class="string">{{ this.d3 }}</th>
+                        <th class="string">Order</th>
+                        <th class="string">Locatie {{ this.d1 }}</th>
+                        <th class="string">Locatie {{ this.d2 }}</th>
+                        <th v-if="this.d3.length > 0" class="string">Locatie {{ this.d3 }}</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr style="border:1px solid #ccc;" v-for="barcode in valoareSQL" :key="barcode">
                         <td style="border:1px solid #ccc;text-align:center;padding:3px;" class="string">{{ barcode.Order }}</td>
-                        <td style="border:1px solid #ccc;text-align:center;padding:3px;" class="string">{{ barcode.Element }}</td>
-                        <td v-if="this.arrayCuKey.length > 2 && this.arrayCuKey.length <= 3" style="border:1px solid #ccc;text-align:center;padding:3px;" class="string">{{ barcode.Element }}</td>
-                        <td v-if="this.arrayCuKey.length > 3" style="border:1px solid #ccc;text-align:center;padding:3px;" class="string">{{ barcode.Element }}</td>
+                        <td style="border:1px solid #ccc;text-align:center;padding:3px;" class="string">{{ barcode.locOne }}</td>
+                        <td style="border:1px solid #ccc;text-align:center;padding:3px;" class="string">{{ barcode.locTwo}}</td>
+                        <td v-if="this.d3.length > 0" style="border:1px solid #ccc;text-align:center;padding:3px;" class="string">{{ barcode.locThree}}</td>
                     </tr>
                 </tbody>
             </table>
@@ -27,11 +28,17 @@
 
 <script>
 import { toastController } from '@ionic/vue';
+import { scan } from 'ionicons/icons';
 import { defineComponent } from 'vue'
 import { Preferences } from '@capacitor/preferences';
 import { CapacitorSQLite, SQLiteConnection } from '@capacitor-community/sqlite'
 import { IonContent } from '@ionic/vue';
 export default defineComponent({
+    setup() {
+        return {
+            scan
+        }
+    },
     data() {
         return {
             currentLocation: '',
@@ -41,8 +48,7 @@ export default defineComponent({
             d2: '',
             p2: '',
             d3: '',
-            p3: '',
-            arrayCuKey: []
+            p3: ''
         }
     },
     components: { IonContent },
@@ -91,33 +97,28 @@ export default defineComponent({
 
                     this.p2 = 'X'; // x
                     this.d2 = 'CAPTUSEALA';
-                    
+
                 }
 
                 sql_query = "with vbm as  (Select substr([Order], 1, LENGTH([Order]) - 1) as [Order], REPLACE(Locatie, 'LOC ','') as Locatie, Element, row_number() over(partition by substr([Order], 1, LENGTH([Order]) - 1), Element order by [TimeStamp] desc) as RowNum  from Barcode_match)";
-                sql_query += "SELECT bm1.[Order], bm1.Locatie AS ["+this.d1+"], bm2.Locatie AS ["+this.d2+"] "
-                if(loc == 3) sql_query += ",bm3.Locatie AS ["+this.d3+"] "
-                if(loc != 3) sql_query += "FROM vbm as bm1  INNER JOIN vbm AS bm2 ON bm1.[Order] = bm2.[Order] INNER JOIN vbm AS bm3 ON bm1.[Order] = bm3.[Order] WHERE bm2.Element = '"+this.p2+"' and bm2.RowNum = 1 AND bm1.Element = '"+this.p1+"' and bm1.RowNum = 1;"
-                if(loc == 3) sql_query += "FROM vbm as bm1  INNER JOIN vbm AS bm2 ON bm1.[Order] = bm2.[Order] INNER JOIN vbm AS bm3 ON bm1.[Order] = bm3.[Order] WHERE bm2.Element = '"+this.p2+"' and bm2.RowNum = 1 AND bm1.Element = '"+this.p1+"' and bm1.RowNum = 1 AND bm3.Element = '"+this.p3+"' and bm3.RowNum = 1;"
+                sql_query += "SELECT bm1.[Order], bm1.Locatie AS [locOne], bm2.Locatie AS [locTwo] "
+                if (loc == 3) sql_query += ",bm3.Locatie AS [locThree] "
+                if (loc != 3) sql_query += " FROM vbm as bm1  INNER JOIN vbm AS bm2 ON bm1.[Order] = bm2.[Order] INNER JOIN vbm AS bm3 ON bm1.[Order] = bm3.[Order] WHERE bm2.Element = '" + this.p2 + "' and bm2.RowNum = 1 AND bm1.Element = '" + this.p1 + "' and bm1.RowNum = 1;"
+                if (loc == 3) sql_query += " FROM vbm as bm1  INNER JOIN vbm AS bm2 ON bm1.[Order] = bm2.[Order] INNER JOIN vbm AS bm3 ON bm1.[Order] = bm3.[Order] WHERE bm2.Element = '" + this.p2 + "' and bm2.RowNum = 1 AND bm1.Element = '" + this.p1 + "' and bm1.RowNum = 1 AND bm3.Element = '" + this.p3 + "' and bm3.RowNum = 1;"
 
 
                 await db.query(sql_query)
                     .then((SQL) => {
-                        document.querySelector('#test_debug').innerHTML = JSON.stringify(SQL);
-                        // Object.entries(SQL).forEach(([key, value]) => {
-                        //     if (key.length > 0) console.log("ok complete");
-                        //     if (value.length > 0) {
-                        //         this.valoareSQL = value;
-
-
-                        //         this.arrayCuKey.push(value);
-
-                        //     }
-                        //     else {
-                        //         this.showWarninigError(10000, "Momentan nu ai nimic de imperecheat!");
-                        //         document.querySelector('#test_debug').innerHTML = sql_query;
-                        //     }
-                        // })
+                        // document.querySelector('#test_debug').innerHTML = JSON.stringify(SQL);
+                        Object.entries(SQL).forEach(([key, value]) => {
+                            if (key.length > 0) console.log("ok complete");
+                            if (value.length > 0) {
+                                this.valoareSQL = value;
+                            }
+                            else {
+                                this.showWarninigError(10000, "Momentan nu ai nimic de imperecheat!");
+                            }
+                        })
                     })
                     .catch((e) => {
                         alert(e);
