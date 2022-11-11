@@ -1,25 +1,23 @@
 <template>
     <content-layout title="Barcode">
-        <div v-if="this.startScann">
-            <qrcode-stream @decode="decode" @init="logErrors"></qrcode-stream>
-        </div>
         <ion-card color="light">
             <ion-card-header>
-                <ion-button @click="buttonCauta">
-                    Cauta
-                </ion-button>
-                <ion-button @click="buttonComplet">
-                    <!-- barcode_match3?mp=alimentat -->
-                    Complet
-                </ion-button>
-                <ion-button @click="buttonVerifica">
-                    <!-- barcode_ck3?loc=LOC C-3&mp=alimentat -->
-                    Verifica
-                </ion-button>
-                <ion-button @click="buttonInventar">
-                    Inventar
-                </ion-button>
-
+                <div id="button-desing">
+                    <ion-button @click="buttonCauta">
+                        Cauta
+                    </ion-button>
+                    <ion-button @click="buttonComplet">
+                        <!-- barcode_match3?mp=alimentat -->
+                        Complet
+                    </ion-button>
+                    <ion-button @click="buttonVerifica">
+                        <!-- barcode_ck3?loc=LOC C-3&mp=alimentat -->
+                        Verifica
+                    </ion-button>
+                    <ion-button @click="buttonInventar">
+                        Inventar
+                    </ion-button>
+                </div>
                 <h3 v-if="this.stare == 'adauga_vte_in_locatie' && this.valLocatie.length > 0">{{ this.valLocatie }}
                 </h3>
                 <h3 id="output" v-if="this.output.length > 0">{{ this.output }}</h3>
@@ -108,6 +106,9 @@
             <ion-card-content>
                 <ion-button expand="full" @click="globalForLoop">Scaneaza</ion-button>
             </ion-card-content>
+            <div v-if="this.startScann" id="qr-scann">
+            <qrcode-stream @decode="decode" @init="logErrors"></qrcode-stream>
+        </div>
         </ion-card>
 
 
@@ -156,8 +157,8 @@ export default defineComponent({
             const capLite = new SQLiteConnection(CapacitorSQLite);
             const db = await capLite.createConnection("barcode_match_db", 1, false, 'no-encryption', false);
             await db.open();
-            this.codeQr = codeQrScanned;
-            if (this.codeQr.startsWith('https')) this.codeQr.replace("https://node.formens.ro/q/", "") + 'V';
+            if (codeQrScanned.startsWith('https')) this.codeQr = codeQrScanned.replace("https://node.formens.ro/q/", "") + 'V';
+            else this.codeQr = codeQrScanned;
 
             if (this.currentLocation != '' && this.currentLocation != 'null') {
                 if (this.stare == 'cauta') {
@@ -227,6 +228,7 @@ export default defineComponent({
                                             // this.saveVteInLocatie();
 
                                             this.output = "Este pe raft: ";
+                                            document.querySelector('#output').style.color = 'green';
 
                                             this.valoareSQL = value;
                                             this.startScann = false;
@@ -235,7 +237,8 @@ export default defineComponent({
                                             this.stare = "locatie";
                                             this.startScann = false;
 
-                                            this.output = "Nu se poate imperechea pune-l pe raft!";
+                                            this.output = "Nu se poate imperechea. Pune-l pe raft!";
+                                            document.querySelector('#output').style.color = 'red';
                                         }
                                     })
                                 })
@@ -266,7 +269,7 @@ export default defineComponent({
                             .then(() => {
 
                                 this.output = "" + this.codeQr + " a fost adaugat in locatia " + this.valLocatie.replace('LOC ', '') + "";
-
+                                document.querySelector('#output').style.color = 'green';
                                 this.startScann = false;
                                 this.stare = '';
                             })
@@ -287,6 +290,8 @@ export default defineComponent({
                                     if (key.length) console.log("[debug]");
                                     if (value.length > 0) {
                                         this.valoareSQL = value;
+
+                                        this.startScann = false; // Opresc camera.
                                     }
                                     else {
                                         this.output = "Locatie specificata invalida.";
@@ -332,6 +337,7 @@ export default defineComponent({
                                 await db.query("INSERT INTO `barcode_match` (`Order`, `Locatie`, `Element`, `Matchpoint`) VALUES ('" + this.codeQr + "', '" + this.valoareOfInput_loc + "', '" + this.valoareOfInput_loc.split(' ').pop().split('-')[0] + "', '" + this.currentLocation + "');")
                                     .then(() => {
                                         this.output = "" + this.codeQr.toUpperCase() + " salvat in " + this.valoareOfInput_loc.replace('LOC ', '') + "";
+                                        document.querySelector('#output').style.color = 'green';
                                     })
                                     .catch((e) => {
                                         alert(e);
@@ -351,7 +357,7 @@ export default defineComponent({
             if (this.stare == 'cauta') {
                 this.startScann = true;
             } else if (this.stare == 'locatie') {
-                this.output = 'Scaneaza dosarul...';
+                this.output = 'Scaneaza comanda...';
                 this.startScann = true;
             } else if (this.stare == '') {
                 this.stare = 'cauta';
@@ -373,7 +379,7 @@ export default defineComponent({
             this.stare = 'cauta';
             this.output = 'CAUTA - Scaneaza dosarul...';
             this.valoareSQL = [];
-            this.startScann = false;
+            this.startScann = true; // activeaza camera
 
             this.valoareOfInput_loc = '';
             this.sendVTEForAdd = '';
@@ -498,7 +504,7 @@ export default defineComponent({
                         alert("qr-scanner" + e)
                     })
 
-                if (this.lastVte_scanned == '') {
+                if (this.currentLocation == '') {
                     await db.query("INSERT INTO `barcode_match_logs` (`Logs`) VALUES ('- [WARN]: DB successfully created..');")
                         .then(() => { console.log("ok inserted log"); })
                         .catch(e => {
@@ -526,5 +532,15 @@ export default defineComponent({
 <style>
 #output {
     color: rgb(0, 0, 0);
+}
+
+#qr-scann {
+    height: 400px;
+}
+
+#button-desing {
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 </style>
