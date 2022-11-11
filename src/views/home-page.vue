@@ -157,7 +157,10 @@ export default defineComponent({
             const capLite = new SQLiteConnection(CapacitorSQLite);
             const db = await capLite.createConnection("barcode_match_db", 1, false, 'no-encryption', false);
             await db.open();
-            if (codeQrScanned.startsWith('https')) this.codeQr = codeQrScanned.replace("https://node.formens.ro/q/", "") + 'V';
+            if (codeQrScanned.startsWith('https')) {
+                this.codeQr = codeQrScanned.replace("https://node.formens.ro/q/", "") + 'V';
+                this.codeQr = 'V' + this.codeQr;
+            }
             else this.codeQr = codeQrScanned;
 
             if (this.currentLocation != '' && this.currentLocation != 'null') {
