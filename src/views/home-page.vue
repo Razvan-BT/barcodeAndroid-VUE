@@ -229,7 +229,6 @@ export default defineComponent({
                                             this.output = "Este pe raft: ";
 
                                             this.valoareSQL = value;
-                                            this.stare = "";
                                             this.startScann = false;
 
                                         } else {
@@ -352,6 +351,7 @@ export default defineComponent({
             if (this.stare == 'cauta') {
                 this.startScann = true;
             } else if (this.stare == 'locatie') {
+                this.output = 'Scaneaza dosarul...';
                 this.startScann = true;
             } else if (this.stare == '') {
                 this.stare = 'cauta';
