@@ -54,6 +54,8 @@
 </template>
 
 <script>
+// import { home, settings } from 'ionicons/icons'
+
 import {
     IonPage,
     IonContent,
