@@ -247,7 +247,6 @@ export default defineComponent({
     QrcodeStream,
   },
   methods: {
-
     async decode(codeQrScanned) {
       const capLite = new SQLiteConnection(CapacitorSQLite);
       const db = await capLite.createConnection(
@@ -261,8 +260,8 @@ export default defineComponent({
       if (codeQrScanned.startsWith("https")) {
         this.codeQr =
           codeQrScanned.replace("https://node.formens.ro/q/", "") + "V";
-        this.codeQr = "V" + this.codeQr;
-      } else this.codeQr = codeQrScanned;
+        this.codeQr = "V" + this.codeQr.trim();
+      } else this.codeQr = codeQrScanned.trim();
 
       if (this.currentLocation != "" && this.currentLocation != "null") {
         if (this.stare == "cauta") {
@@ -422,6 +421,9 @@ export default defineComponent({
                   alert(e);
                 });
             }
+          } else {
+            this.output = "VTE invalid!";
+            document.querySelector("#output").style.color = "red";
           }
         } else if (this.stare == "locatie") {
           this.valLocatie = this.codeQr.toUpperCase();
@@ -598,50 +600,43 @@ export default defineComponent({
     },
 
     buttonCauta() {
-
+      this.output = "CAUTA - Scaneaza dosarul...";
       document.querySelector("#output").style.color = "black";
       this.stare = "cauta";
-      this.output = "CAUTA - Scaneaza dosarul...";
       this.valoareSQL = [];
       this.startScann = true; // activeaza camera
 
       this.valoareOfInput_loc = "";
       this.sendVTEForAdd = "";
-
     },
 
     buttonVerifica() {
-
-      document.querySelector("#output").style.color = "black";
       this.output = "Scaneaza Locatia...";
+      document.querySelector("#output").style.color = "black";
       this.stare = "verifica";
       this.valoareSQL = [];
-      if(this.startScann) this.startScann = false;
+      if (this.startScann) this.startScann = false;
       this.startScann = true; // cand apasa verifica porneste si camera
       this.valLocatie = "";
 
       this.valoareOfInput_loc = "";
       this.sendVTEForAdd = "";
-
     },
 
     buttonInventar() {
-
-      document.querySelector("#output").style.color = "black";
       this.output = "Scaneaza locatia...";
-      this.stare = "inventar";
-      this.valoareSQL = [];
-      if(this.startScann) this.startScann = false;
+      document.querySelector("#output").style.color = "black";
+      if (this.startScann) this.startScann = false;
       this.startScann = true;
       this.valLocatie = "";
+      this.stare = "inventar";
+      this.valoareSQL = [];
 
       this.valoareOfInput_loc = "";
       this.sendVTEForAdd = "";
-
     },
 
     async buttonComplet() {
-
       this.sendVTEForAdd = "";
       this.valoareOfInput_loc = "";
       this.startScann = false;
@@ -719,34 +714,25 @@ export default defineComponent({
           .catch((e) => {
             alert(e);
           });
-
       }
       await capLite.closeConnection("barcode_match_db");
       if (this.valoareSQL.length > 0) {
-
         this.output = "Complete: " + this.valoareSQL.length + "";
         this.isComplete = true;
-
       } else {
-
         this.isComplete = false;
         this.output = "Nu sunt complete.";
-
       }
 
       document.querySelector("#output").style.color = "black";
     },
 
     async getLoc() {
-
       const { value } = await Preferences.get({ key: "location" });
       this.currentLocation = `${value}`;
-
     },
-
   },
   async beforeMount() {
-
     this.getLoc();
 
     try {
@@ -843,8 +829,6 @@ export default defineComponent({
       (u.getUTCMilliseconds() / 1000).toFixed(3).slice(2, 5)
     );
   },
-
-  
 });
 </script>
 
